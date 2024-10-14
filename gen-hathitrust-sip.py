@@ -36,6 +36,7 @@ def calculate_md5(filename):
 def main():
     script_dir = os.path.dirname(os.path.realpath(sys.argv[0]))
     meta_file = os.path.join(script_dir, "meta.yml")
+    barcodes_file = os.path.join(script_dir, "barcodes.yml")
 
     parser = argparse.ArgumentParser(description="Generate SIP for HathiTrust")
     parser.add_argument("id", help="Object identifier")
@@ -61,6 +62,10 @@ def main():
     with open(meta_file) as f:
         meta = yaml.safe_load(f)
     logging.debug("meta file contents: %s", pformat(meta))
+
+    with open(barcodes_file) as f:
+        barcodes = yaml.safe_load(f)
+    logging.debug("barcodes: %s", pformat(barcodes))
 
     rstar_dir = os.path.join(
         RSTAR_HOME, "content", partner, collection, "wip", "se", args.id
@@ -93,7 +98,7 @@ def main():
         out.write(f"{calculate_md5(dst_file)} {dst_base}\n")
         out.close()
 
-        output_zip_file = os.path.join(tmp_base, args.id)
+        output_zip_file = os.path.join(tmp_base, str(barcodes[args.id]))
         shutil.make_archive(output_zip_file, "zip", sip_dir)
 
         output_zip_file = f"{output_zip_file}.zip"
