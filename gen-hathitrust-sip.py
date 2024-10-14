@@ -6,6 +6,7 @@ import hashlib
 import logging
 import mets
 import os
+import pymods
 import re
 import shutil
 import sys
@@ -76,6 +77,15 @@ def main():
     logging.debug(f"METS file: {mets_file}")
 
     source_mets = mets.SourceEntityMets(mets_file)
+
+    mods_file = source_mets.get_mods_file()
+    logging.debug(f"MODS file: {mods_file}")
+    mods = mets.MODS(mods_file)
+    title = mods.title()
+    logging.debug(f"title: {title}")
+
+    mods_record = next(pymods.MODSReader(mods_file))
+    logging.debug(mods_record.titles)
 
     tmp_base = os.path.join(RSTAR_HOME, "tmp", os.getlogin())
     with tempfile.TemporaryDirectory(dir=tmp_base) as tmpdir:
