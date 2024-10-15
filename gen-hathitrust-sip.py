@@ -10,6 +10,7 @@ import pymods
 import re
 import regex
 import shutil
+import subprocess
 import sys
 import tempfile
 import unicodedata
@@ -70,6 +71,8 @@ def main():
 
     with open(meta_file) as f:
         meta = yaml.safe_load(f)
+        f.seek(0)
+        meta_str = f.read()
     logging.debug("meta file contents: %s", pformat(meta))
 
     with open(barcodes_file) as f:
@@ -100,24 +103,32 @@ def main():
         sip_dir = os.path.join(tmpdir, args.id)
         os.mkdir(sip_dir)
 
+        page_data = {}
+
         checksum_file = os.path.join(sip_dir, "checksum.md5")
-        out = open(checksum_file, "w")
+        chks_out = open(checksum_file, "w")
         for i, file_id in enumerate(source_mets.get_file_ids(), start=1):
             for src_ext in HATHI_EXT:
                 src_file = os.path.join(rstar_dir, "aux", f"{file_id}{src_ext}")
                 dst_base = f"{i:08d}{HATHI_EXT[src_ext]}"
                 dst_file = os.path.join(sip_dir, dst_base)
-                if HATHI_EXT[src_ext] == ".txt":
-                    remove_control_chars(src_file, dst_file)
-                else:
+                if HATHI_EXT[src_ext] == ".jp2":
                     os.symlink(src_file, dst_file)
-                out.write(f"{calculate_md5(dst_file)} {dst_base}\n")
+                    page_data[dst_base] = {"orderlabel": str(i)}
+                else:
+                    remove_control_chars(src_file, dst_file)
+                chks_out.write(f"{calculate_md5(dst_file)} {dst_base}\n")
 
-        dst_base = "meta.yml"
-        dst_file = os.path.join(sip_dir, dst_base)
-        os.symlink(meta_file, dst_file)
-        out.write(f"{calculate_md5(dst_file)} {dst_base}\n")
-        out.close()
+        meta["pagedata"] = page_data
+
+        meta_base = "meta.yml"
+        meta_file = os.path.join(sip_dir, meta_base)
+        logging.debug(f"new meta file: {meta_file}")
+        with open(meta_file, "w") as meta_fh:
+            meta_fh.write(meta_str.strip() + "\n")
+            meta_fh.write(yaml.dump({"pagedata": page_data}))
+        chks_out.write(f"{calculate_md5(meta_file)} {meta_base}\n")
+        chks_out.close()
 
         output_zip_file = os.path.join(tmp_base, str(barcodes[args.id]))
         shutil.make_archive(output_zip_file, "zip", sip_dir)
@@ -125,6 +136,17 @@ def main():
         output_zip_file = f"{output_zip_file}.zip"
         size_gb = os.path.getsize(output_zip_file) / (1024**3)
         logging.debug(f"file size: {size_gb:.2f} GB")
+
+        orig_dir = os.getcwd()
+        validator_dir = os.path.join(
+            os.path.expanduser("~"), "ht_sip_validator"
+        )
+        os.chdir(validator_dir)
+        subprocess.run(
+            ["bundle", "exec", "ruby", "bin/validate_sip", output_zip_file],
+            check=True,
+        )
+        os.chdir(orig_dir)
 
         if size_gb > 15:
             util.split_zip(output_zip_file)
