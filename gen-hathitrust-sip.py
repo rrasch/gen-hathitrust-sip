@@ -126,7 +126,7 @@ def main():
         logging.debug(f"new meta file: {meta_file}")
         with open(meta_file, "w") as meta_fh:
             meta_fh.write(meta_str.strip() + "\n")
-            meta_fh.write(yaml.dump({"pagedata": page_data}))
+            meta_fh.write(yaml.dump({"pagedata": page_data}, indent=4))
         chks_out.write(f"{calculate_md5(meta_file)} {meta_base}\n")
         chks_out.close()
 
