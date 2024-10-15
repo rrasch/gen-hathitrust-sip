@@ -8,9 +8,11 @@ import mets
 import os
 import pymods
 import re
+import regex
 import shutil
 import sys
 import tempfile
+import unicodedata
 import util
 import yaml
 
@@ -32,6 +34,12 @@ def calculate_md5(filename):
         for chunk in iter(lambda: f.read(4096), b""):
             hash_md5.update(chunk)
     return hash_md5.hexdigest()
+
+
+def remove_control_chars(input_file, output_file):
+    with open(input_file) as in_fh, open(output_file, "w") as out_fh:
+        for line in in_fh:
+            out_fh.write(regex.sub(r"\p{C}", "", line) + "\n")
 
 
 def main():
@@ -97,9 +105,12 @@ def main():
         for i, file_id in enumerate(source_mets.get_file_ids(), start=1):
             for src_ext in HATHI_EXT:
                 src_file = os.path.join(rstar_dir, "aux", f"{file_id}{src_ext}")
-                dst_base = f"{i:06d}{HATHI_EXT[src_ext]}"
+                dst_base = f"{i:08d}{HATHI_EXT[src_ext]}"
                 dst_file = os.path.join(sip_dir, dst_base)
-                os.symlink(src_file, dst_file)
+                if HATHI_EXT[src_ext] == ".txt":
+                    remove_control_chars(src_file, dst_file)
+                else:
+                    os.symlink(src_file, dst_file)
                 out.write(f"{calculate_md5(dst_file)} {dst_base}\n")
 
         dst_base = "meta.yml"
