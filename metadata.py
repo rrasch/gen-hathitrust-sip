@@ -53,11 +53,14 @@ class MODS(Meta):
         return non_sort + title
 
 
-class SourceEntityMets(Meta):
+class SourceEntityMETS(Meta):
     nsmap = {
         "m": "http://www.loc.gov/METS/",
         "xlink": "http://www.w3.org/1999/xlink",
     }
+
+    def id(self):
+        return self.root.xpath("/mets/@OBJID")[0]
 
     def get_file_ids(self):
         file_id_list = []

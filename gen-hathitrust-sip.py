@@ -4,7 +4,7 @@ from pprint import pformat
 import argparse
 import hashlib
 import logging
-import mets
+import metadata
 import os
 import pymods
 import re
@@ -87,11 +87,11 @@ def main():
     mets_file = os.path.join(rstar_dir, "data", f"{args.id}_mets.xml")
     logging.debug(f"METS file: {mets_file}")
 
-    source_mets = mets.SourceEntityMets(mets_file)
+    source_mets = metadata.SourceEntityMETS(mets_file)
 
     mods_file = source_mets.get_mods_file()
     logging.debug(f"MODS file: {mods_file}")
-    mods = mets.MODS(mods_file)
+    mods = metadata.MODS(mods_file)
     title = mods.title()
     logging.debug(f"title: {title}")
 
