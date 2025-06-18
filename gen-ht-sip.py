@@ -46,9 +46,21 @@ def do_cmd(cmd):
     subprocess.run(cmd, check=True)
 
 
+def get_magick_cmd():
+    magick_cmd = None
+    for cmd in ("magick", "convert"):
+        if shutil.which(cmd):
+            magick_cmd = cmd
+            break
+    if not magick_cmd:
+        sys.exit("ImageMagick is not installed.")
+    return magick_cmd
+
+
 def main():
     script_dir = os.path.dirname(os.path.realpath(sys.argv[0]))
     meta_file = os.path.join(script_dir, "meta.yml")
+    magick = get_magick_cmd()
 
     parser = argparse.ArgumentParser(description="Generate SIP for HathiTrust")
     parser.add_argument("input_dir", type=validate_dirpath)
@@ -91,7 +103,7 @@ def main():
                 output_base = os.path.join(sip_dir, basename)
 
                 cleaned_img = output_base + ".tif"
-                do_cmd(["convert", img_file + "[0]", cleaned_img])
+                do_cmd([magick, img_file + "[0]", cleaned_img])
                 do_cmd(["tesseract", cleaned_img, output_base])
                 do_cmd(["tesseract", cleaned_img, output_base, "hocr"])
                 os.rename(output_base + ".hocr", output_base + ".html")
