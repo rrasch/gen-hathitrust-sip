@@ -57,6 +57,14 @@ def get_magick_cmd():
     return magick_cmd
 
 
+def remove_control_chars(input_file):
+    output_file = input_file + ".tmp"
+    with open(input_file) as in_fh, open(output_file, "w") as out_fh:
+        for line in in_fh:
+            out_fh.write(regex.sub(r"\p{C}", "", line) + "\n")
+    os.rename(output_file, input_file)
+
+
 def main():
     script_dir = os.path.dirname(os.path.realpath(sys.argv[0]))
     meta_file = os.path.join(script_dir, "meta.yml")
@@ -113,6 +121,8 @@ def main():
                     full_path = os.path.join(sip_dir, filename)
                     if ext == ".tif":
                         page_data[filename] = {"orderlabel": str(i)}
+                    else:
+                        remove_control_chars(full_path)
                     chks_out.write(f"{calculate_md5(full_path)} {filename}\n")
 
             meta["pagedata"] = page_data
