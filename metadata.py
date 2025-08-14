@@ -5,7 +5,7 @@ import re
 import util
 
 
-class MODFileNotFound(Exception):
+class MODSFileNotFound(Exception):
     pass
 
 
@@ -78,5 +78,5 @@ class SourceEntityMETS(Meta):
     def get_mods_file(self):
         mods_file = self.root.xpath("//mdRef[@MDTYPE='MODS']/@href")
         if not mods_file:
-            raise MODFileNotFound("Could not find MODS file")
+            raise MODSFileNotFound("Could not find MODS file")
         return os.path.join(os.path.dirname(self.filepath), mods_file[0])
